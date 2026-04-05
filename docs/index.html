@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StregPay — WooCommerce Payment Gateway for F-Klub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:        #06080f;
+            --bg2:       #0c0f1a;
+            --bg3:       #111524;
+            --border:    #1e2540;
+            --border2:   #2a3158;
+            --blue:      #3b82f6;
+            --blue-dim:  #1d4ed8;
+            --blue-glow: rgba(59,130,246,0.15);
+            --amber:     #f59e0b;
+            --amber-dim: #d97706;
+            --green:     #22c55e;
+            --red:       #ef4444;
+            --purple:    #a78bfa;
+            --text:      #f1f5f9;
+            --text2:     #94a3b8;
+            --text3:     #64748b;
+            --mono:      'JetBrains Mono', monospace;
+            --sans:      'DM Sans', sans-serif;
+            --display:   'Syne', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
+            font-size: 16px;
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ─── GRID NOISE BACKGROUND ─── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                    linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wrap { max-width: 900px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 1; }
+
+        /* ─── HERO ─── */
+        .hero {
+            padding: 80px 0 64px;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero-glow {
+            position: absolute;
+            top: -120px; left: 50%;
+            transform: translateX(-50%);
+            width: 700px; height: 700px;
+            background: radial-gradient(ellipse at center, rgba(59,130,246,0.12) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .logo-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-icon {
+            width: 72px; height: 72px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #3b82f6 100%);
+            border-radius: 20px;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(59,130,246,0.4);
+            box-shadow: 0 0 40px rgba(59,130,246,0.25), inset 0 1px 0 rgba(255,255,255,0.1);
+            flex-shrink: 0;
+        }
+
+        .logo-icon svg { width: 38px; height: 38px; }
+
+        .logo-text {
+            font-family: var(--display);
+            font-size: 68px;
+            font-weight: 800;
+            letter-spacing: -2px;
+            line-height: 1;
+            background: linear-gradient(135deg, #ffffff 0%, #93c5fd 60%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-tagline {
+            font-family: var(--display);
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--text2);
+            margin-bottom: 12px;
+            position: relative; z-index: 1;
+            letter-spacing: -0.3px;
+        }
+
+        .hero-sub {
+            font-size: 15px;
+            color: var(--text3);
+            max-width: 520px;
+            margin: 0 auto 36px;
+            position: relative; z-index: 1;
+        }
+
+        .badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 0;
+            position: relative; z-index: 1;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 99px;
+            font-family: var(--mono);
+            font-size: 11.5px;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            border: 1px solid;
+        }
+
+        .badge-blue   { color: #93c5fd; border-color: rgba(59,130,246,0.35); background: rgba(59,130,246,0.1); }
+        .badge-green  { color: #86efac; border-color: rgba(34,197,94,0.35);  background: rgba(34,197,94,0.1);  }
+        .badge-amber  { color: #fde68a; border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.1); }
+        .badge-purple { color: #c4b5fd; border-color: rgba(167,139,250,0.35);background: rgba(167,139,250,0.1);}
+        .badge-gray   { color: #94a3b8; border-color: rgba(148,163,184,0.25);background: rgba(148,163,184,0.07);}
+
+        /* ─── DIVIDER ─── */
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, var(--border2) 20%, var(--border2) 80%, transparent 100%);
+            margin: 0;
+        }
+
+        /* ─── SECTION ─── */
+        section { padding: 64px 0; }
+
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--blue);
+            margin-bottom: 12px;
+        }
+
+        .section-label::before {
+            content: '';
+            display: inline-block;
+            width: 16px; height: 1px;
+            background: var(--blue);
+        }
+
+        h2 {
+            font-family: var(--display);
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.8px;
+            color: var(--text);
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+
+        h3 {
+            font-family: var(--display);
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .lead {
+            color: var(--text2);
+            font-size: 16px;
+            max-width: 600px;
+            margin-bottom: 40px;
+            line-height: 1.7;
+        }
+
+        /* ─── INTRO SPLIT ─── */
+        .intro-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 32px;
+        }
+
+        .intro-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .intro-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            border-radius: 14px 14px 0 0;
+        }
+
+        .intro-card.blue::before  { background: linear-gradient(90deg, var(--blue), transparent); }
+        .intro-card.amber::before { background: linear-gradient(90deg, var(--amber), transparent); }
+        .intro-card.green::before { background: linear-gradient(90deg, var(--green), transparent); }
+        .intro-card.purple::before{ background: linear-gradient(90deg, var(--purple), transparent); }
+
+        .card-icon {
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .card-icon.blue   { background: rgba(59,130,246,0.15); }
+        .card-icon.amber  { background: rgba(245,158,11,0.15); }
+        .card-icon.green  { background: rgba(34,197,94,0.15); }
+        .card-icon.purple { background: rgba(167,139,250,0.15); }
+
+        .intro-card p { color: var(--text2); font-size: 14px; line-height: 1.65; }
+
+        /* ─── HOW IT WORKS ─── */
+        .flow {
+            display: flex;
+            align-items: flex-start;
+            gap: 0;
+            margin-top: 40px;
+            position: relative;
+        }
+
+        .flow::before {
+            content: '';
+            position: absolute;
+            top: 28px;
+            left: calc(14% + 14px);
+            right: calc(14% + 14px);
+            height: 1px;
+            background: linear-gradient(90deg, var(--blue-dim), var(--border2) 50%, var(--blue-dim));
+            z-index: 0;
+        }
+
+        .flow-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            padding: 0 8px;
+        }
+
+        .flow-num {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            border: 1px solid var(--border2);
+            background: var(--bg2);
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--mono);
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--blue);
+            margin: 0 auto 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .flow-step h4 {
+            font-family: var(--display);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+            letter-spacing: -0.2px;
+        }
+
+        .flow-step p {
+            font-size: 12px;
+            color: var(--text3);
+            line-height: 1.55;
+        }
+
+        /* ─── FEATURES GRID ─── */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 40px;
+        }
+
+        .feature {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: border-color 0.2s;
+        }
+
+        .feature:hover { border-color: var(--border2); }
+
+        .feat-icon {
+            font-size: 20px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .feature h4 {
+            font-family: var(--display);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        .feature p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+        /* ─── CODE BLOCKS ─── */
+        .code-section { margin-top: 40px; }
+
+        .code-block {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg3);
+        }
+
+        .code-title {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--text3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .code-title .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot-red    { background: #ef4444; }
+        .dot-amber  { background: #f59e0b; }
+        .dot-green  { background: #22c55e; }
+
+        .code-dots { display: flex; gap: 5px; }
+
+        pre {
+            padding: 20px;
+            font-family: var(--mono);
+            font-size: 13px;
+            line-height: 1.8;
+            overflow-x: auto;
+            color: var(--text2);
+        }
+
+        .c-cmd    { color: #86efac; }
+        .c-kw     { color: #93c5fd; }
+        .c-str    { color: #fde68a; }
+        .c-cmt    { color: var(--text3); font-style: italic; }
+        .c-num    { color: #f9a8d4; }
+        .c-sym    { color: var(--amber); }
+
+        /* ─── STEPS ─── */
+        .steps { counter-reset: step; margin-top: 40px; }
+
+        .step {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        .step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 19px;
+            top: 44px;
+            bottom: -12px;
+            width: 1px;
+            background: var(--border);
+        }
+
+        .step-num {
+            counter-increment: step;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--border2);
+            background: var(--bg2);
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--blue);
+        }
+
+        .step-body h4 {
+            font-family: var(--display);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+            padding-top: 8px;
+        }
+
+        .step-body p { font-size: 14px; color: var(--text2); margin-bottom: 10px; }
+
+        /* ─── DOCKER TABLE ─── */
+        .cmd-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 24px;
+        }
+
+        .cmd-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            gap: 12px;
+        }
+
+        .cmd-label { font-size: 13px; color: var(--text2); }
+
+        .cmd-code {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--green);
+            background: rgba(34,197,94,0.08);
+            padding: 3px 8px;
+            border-radius: 5px;
+            white-space: nowrap;
+        }
+
+        /* ─── ALERT BOXES ─── */
+        .alert {
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-size: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+            border: 1px solid;
+        }
+
+        .alert-blue   { background: rgba(59,130,246,0.08);  border-color: rgba(59,130,246,0.25);  color: #93c5fd; }
+        .alert-amber  { background: rgba(245,158,11,0.08);  border-color: rgba(245,158,11,0.25);  color: #fde68a; }
+        .alert-green  { background: rgba(34,197,94,0.08);   border-color: rgba(34,197,94,0.25);   color: #86efac; }
+
+        .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+        .alert strong { font-weight: 600; display: block; margin-bottom: 2px; color: inherit; }
+
+        .alert p, .alert span { font-size: 13px; opacity: 0.85; color: inherit; }
+
+        /* ─── INLINE CODE ─── */
+        code {
+            font-family: var(--mono);
+            font-size: 12.5px;
+            color: #93c5fd;
+            background: rgba(59,130,246,0.12);
+            padding: 2px 7px;
+            border-radius: 5px;
+        }
+
+        /* ─── STACK ─── */
+        .stack-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .stack-icon {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            background: var(--bg3);
+            border: 1px solid var(--border2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .stack-name {
+            font-family: var(--display);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            flex: 1;
+        }
+
+        .stack-ver {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text3);
+            background: var(--bg3);
+            padding: 3px 9px;
+            border-radius: 99px;
+            border: 1px solid var(--border);
+        }
+
+        /* ─── FOOTER ─── */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 48px 0;
+            margin-top: 0;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 48px;
+            margin-bottom: 40px;
+        }
+
+        .footer-brand .logo-mark {
+            font-family: var(--display);
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .footer-brand p {
+            font-size: 13px;
+            color: var(--text3);
+            line-height: 1.65;
+            max-width: 240px;
+        }
+
+        .footer-col h5 {
+            font-family: var(--display);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text3);
+            margin-bottom: 14px;
+        }
+
+        .footer-col a {
+            display: block;
+            color: var(--text2);
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 8px;
+            transition: color 0.15s;
+        }
+
+        .footer-col a:hover { color: var(--blue); }
+
+        .footer-bottom {
+            border-top: 1px solid var(--border);
+            padding-top: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12.5px;
+            color: var(--text3);
+        }
+
+        .footer-bottom a { color: var(--text3); text-decoration: none; }
+        .footer-bottom a:hover { color: var(--text2); }
+
+        /* ─── MISC ─── */
+        .gap-top { margin-top: 24px; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+        .pill {
+            display: inline-block;
+            font-family: var(--mono);
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 99px;
+            font-weight: 500;
+        }
+
+        .pill-blue   { color: #93c5fd; background: rgba(59,130,246,0.12); }
+        .pill-amber  { color: #fde68a; background: rgba(245,158,11,0.12); }
+        .pill-green  { color: #86efac; background: rgba(34,197,94,0.12); }
+
+        a.cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--blue);
+            color: #fff;
+            font-family: var(--display);
+            font-size: 15px;
+            font-weight: 600;
+            padding: 12px 28px;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: background 0.2s;
+            margin-top: 32px;
+        }
+
+        a.cta:hover { background: var(--blue-dim); }
+
+        a.cta-ghost {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text2);
+            font-family: var(--display);
+            font-size: 15px;
+            font-weight: 500;
+            padding: 12px 28px;
+            border-radius: 10px;
+            text-decoration: none;
+            border: 1px solid var(--border2);
+            transition: border-color 0.2s, color 0.2s;
+            margin-top: 32px;
+            margin-left: 12px;
+        }
+
+        a.cta-ghost:hover { border-color: var(--blue); color: var(--blue); }
+
+        .inline-dot {
+            display: inline-block;
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 680px) {
+            .logo-text { font-size: 48px; }
+            .intro-grid, .features-grid, .cmd-grid, .two-col, .footer-grid { grid-template-columns: 1fr; }
+            .flow { flex-direction: column; gap: 24px; }
+            .flow::before { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════ HERO ═══════════════════════ -->
+<div class="hero">
+    <div class="hero-glow"></div>
+    <div class="wrap">
+        <div class="logo-group">
+            <div class="logo-icon">
+                <!-- Tally / strek mark icon -->
+                <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="5" y="10" width="3.5" height="18" rx="1.75" fill="white" opacity="0.9"/>
+                    <rect x="11.5" y="10" width="3.5" height="18" rx="1.75" fill="white" opacity="0.9"/>
+                    <rect x="18" y="10" width="3.5" height="18" rx="1.75" fill="white" opacity="0.9"/>
+                    <rect x="24.5" y="10" width="3.5" height="18" rx="1.75" fill="white" opacity="0.9"/>
+                    <!-- diagonal slash -->
+                    <line x1="4" y1="28" x2="33" y2="10" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.95"/>
+                </svg>
+            </div>
+            <div class="logo-text">StregPay</div>
+        </div>
+
+        <p class="hero-tagline">WooCommerce × Stregsystemet — Native Club Payments</p>
+        <p class="hero-sub">Let F-Klub members pay with their stregdollar balance directly at WooCommerce checkout. No redirects, no friction, no third-party processors.</p>
+
+        <div class="badges">
+            <span class="badge badge-blue">⚡ WooCommerce Gateway</span>
+            <span class="badge badge-green">✓ PHP 8.x</span>
+            <span class="badge badge-amber">▲ WordPress Plugin</span>
+            <span class="badge badge-purple">🐳 Docker Dev Environment</span>
+            <span class="badge badge-gray">LPW License</span>
+            <span class="badge badge-gray">F-Klub / fklub.dk</span>
+        </div>
+
+        <div>
+            <a class="cta" href="https://github.com/f-klubben/stregsystemet">↗ Stregsystemet</a>
+            <a class="cta-ghost" href="https://fklub.dk">F-Klub →</a>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════ WHAT IS IT ═══════════════════════ -->
+<section>
+    <div class="wrap">
+        <div class="section-label">Overview</div>
+        <h2>Pay with your stregdollars.</h2>
+        <p class="lead">StregPay is a WooCommerce payment gateway plugin that bridges the F-Klub online store with the club's internal balance system — <strong style="color:var(--text)">Stregsystemet</strong>. Members check out using the same balance they use at the bar.</p>
+
+        <div class="intro-grid">
+            <div class="intro-card blue">
+                <div class="card-icon blue">💳</div>
+                <h3>Native WooCommerce Gateway</h3>
+                <p>Integrates as a first-class WooCommerce payment method. Members see their balance at checkout and pay in one click — no redirects, no OAuth friction.</p>
+            </div>
+            <div class="intro-card amber">
+                <div class="card-icon amber">⚙️</div>
+                <h3>Stregsystemet API</h3>
+                <p>Talks directly to the <a href="https://github.com/f-klubben/stregsystemet" style="color:var(--amber);text-decoration:none;">stregsystemet</a> backend over its REST API. Deducts balance atomically on purchase confirmation.</p>
+            </div>
+            <div class="intro-card green">
+                <div class="card-icon green">🔒</div>
+                <h3>Club-member Gated</h3>
+                <p>Only authenticated F-Klub members with a valid stregdollar balance can use the gateway. Non-members fall back to standard payment methods seamlessly.</p>
+            </div>
+            <div class="intro-card purple">
+                <div class="card-icon purple">🚀</div>
+                <h3>Docker-first Dev Setup</h3>
+                <p>Spin up a full WordPress + WooCommerce + stregsystemet environment in seconds with Docker Compose. Zero host-machine dependencies beyond Docker.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════ HOW IT WORKS ═══════════════════════ -->
+<section>
+    <div class="wrap">
+        <div class="section-label">How it works</div>
+        <h2>From cart to confirmed — in seconds.</h2>
+        <p class="lead">The complete payment lifecycle runs between WooCommerce and the Stregsystemet API without ever leaving the club ecosystem.</p>
+
+        <div class="flow">
+            <div class="flow-step">
+                <div class="flow-num">01</div>
+                <h4>Member logs in</h4>
+                <p>Authenticates with their F-Klub username at WooCommerce checkout</p>
+            </div>
+            <div class="flow-step">
+                <div class="flow-num">02</div>
+                <h4>Balance fetched</h4>
+                <p>StregPay queries Stregsystemet API for live stregdollar balance</p>
+            </div>
+            <div class="flow-step">
+                <div class="flow-num">03</div>
+                <h4>Gateway shown</h4>
+                <p>If balance ≥ order total, StregPay appears as payment option</p>
+            </div>
+            <div class="flow-step">
+                <div class="flow-num">04</div>
+                <h4>Purchase confirmed</h4>
+                <p>Stregsystemet deducts stregdollars atomically on order placement</p>
+            </div>
+            <div class="flow-step">
+                <div class="flow-num">05</div>
+                <h4>Order completed</h4>
+                <p>WooCommerce confirms the order; balance is updated in real time</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════ FEATURES ═══════════════════════ -->
+<section>
+    <div class="wrap">
+        <div class="section-label">Features</div>
+        <h2>Everything you'd expect. Nothing you don't.</h2>
+
+        <div class="features-grid">
+            <div class="feature">
+                <span class="feat-icon">⚡</span>
+                <h4>Instant balance check</h4>
+                <p>Live stregdollar balance displayed inline at checkout before the member commits to payment.</p>
+            </div>
+            <div class="feature">
+                <span class="feat-icon">🛡️</span>
+                <h4>Atomic transactions</h4>
+                <p>Balance deduction and order confirmation happen together — no partial states or double charges.</p>
+            </div>
+            <div class="feature">
+                <span class="feat-icon">🔄</span>
+                <h4>Auto-refund support</h4>
+                <p>WooCommerce refunds return stregdollars directly to the member's account automatically.</p>
+            </div>
+            <div class="feature">
+                <span class="feat-icon">📱</span>
+                <h4>Mobile-friendly checkout</h4>
+                <p>Fully responsive payment UI — works flawlessly on every device members use.</p>
+            </div>
+            <div class="feature">
+                <span class="feat-icon">🎛️</span>
+                <h4>WP Admin config</h4>
+                <p>Full settings panel in WooCommerce → Settings → Payments. Toggle, configure, and test without touching code.</p>
+            </div>
+            <div class="feature">
+                <span class="feat-icon">🐳</span>
+                <h4>Hot-reload dev loop</h4>
+                <p>File watcher auto-builds assets and syncs the plugin to the Docker container on every save.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════ REQUIREMENTS ═══════════════════════ -->
+<section>
+    <div class="wrap">
+        <div class="section-label">Requirements</div>
+        <h2>Tech stack.</h2>
+        <p class="lead">StregPay is a standard WordPress plugin. Here's what you need to run it.</p>
+
+        <div class="two-col" style="margin-top:28px;">
+            <div>
+                <div class="stack-row">
+                    <div class="stack-icon">🐘</div>
+                    <span class="stack-name">PHP</span>
+                    <span class="stack-ver">≥ 8.0</span>
+                </div>
+                <div class="stack-row">
+                    <div class="stack-icon">🛒</div>
+                    <span class="stack-name">WooCommerce</span>
+                    <span class="stack-ver">≥ 7.x</span>
+                </div>
+                <div class="stack-row">
+                    <div class="stack-icon">🔵</div>
+                    <span class="stack-name">WordPress</span>
+                    <span class="stack-ver">≥ 6.x</span>
+                </div>
+            </div>
+            <div>
+                <div class="stack-row">
+                    <div class="stack-icon">🐳</div>
+                    <span class="stack-name">Docker</span>
+                    <span class="stack-ver">dev only</span>
+                </div>
+                <div class="stack-row">
+                    <div class="stack-icon">📦</div>
+                    <span class="stack-name">Node.js</span>
+                    <span class="stack-ver">≥ 18 (build)</span>
+                </div>
+                <div class="stack-row">
+                    <div class="stack-icon">🏗️</div>
+                    <span class="stack-name">Stregsystemet API</span>
+                    <span class="stack-ver">v2.6+</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════ QUICK START ═══════════════════════ -->
+<section>
+    <div class="wrap">
+        <div class="section-label">Quick Start</div>
+        <h2>Up and running in 4 commands.</h2>
+        <p class="lead">Clone, install, compose, and you're live. The watcher handles everything after that.</p>
+
+        <div class="steps">
+
+            <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-body">
+                    <h4>Install dependencies</h4>
+                    <p>Install the Node.js build toolchain used to compile JS and CSS assets.</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <div class="code-dots"><span class="dot dot-red"></span><span class="dot dot-amber"></span><span class="dot dot-green"></span></div>
+                            <div class="code-title">terminal</div>
+                        </div>
+                        <pre><span class="c-cmd">npm</span> install</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-body">
+                    <h4>Start Docker containers</h4>
+                    <p>Spins up WordPress, WooCommerce, MySQL, and a local Stregsystemet instance.</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <div class="code-dots"><span class="dot dot-red"></span><span class="dot dot-amber"></span><span class="dot dot-green"></span></div>
+                            <div class="code-title">terminal</div>
+                        </div>
+                        <pre><span class="c-cmd">docker-compose</span> up -d</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-body">
+                    <h4>Install the plugin into the container</h4>
+                    <p>Copy the plugin files into the running WordPress container and fix permissions.</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <div class="code-dots"><span class="dot dot-red"></span><span class="dot dot-amber"></span><span class="dot dot-green"></span></div>
+                            <div class="code-title">terminal</div>
+                        </div>
+                        <pre><span class="c-cmd">docker</span> cp . stregpay-checkout-wordpress-1:<span class="c-str">/tmp/stregpay-checkout</span>
+
+<span class="c-cmd">docker</span> exec stregpay-checkout-wordpress-1 \
+  cp -r /tmp/stregpay-checkout/. \
+  /var/www/html/wp-content/plugins/stregpay-checkout/
+
+<span class="c-cmd">docker</span> exec stregpay-checkout-wordpress-1 \
+  chown -R www-data:www-data \
+  /var/www/html/wp-content/plugins/stregpay-checkout</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">4</div>
+                <div class="step-body">
+                    <h4>Open WordPress</h4>
+                    <p>Navigate to the local dev site. Activate StregPay from <em>WooCommerce → Settings → Payments</em>.</p>
+                    <div class="alert alert-blue">
+                        <div class="alert-icon">🌐</div>
+                        <div><strong>Dev URL</strong><span>http://localhost:8080</span></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════ DEV WORKFLOW ═══════════════════════ -->
+<section>
+    <div class="wrap">
+        <div class="section-label">Development</div>
+        <h2>Two ways to work.</h2>
+        <p class="lead">Rebuild and sync manually for focused changes, or let the watcher do it automatically as you code.</p>
+
+        <div class="two-col gap-top">
+            <div>
+                <h3 style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+                    <span class="pill pill-amber">Manual</span> One-shot update
+                </h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <div class="code-dots"><span class="dot dot-red"></span><span class="dot dot-amber"></span><span class="dot dot-green"></span></div>
+                        <div class="code-title">Rebuild assets, then sync</div>
+                    </div>
+                    <pre><span class="c-cmt"># 1. Compile JS + CSS</span>
+<span class="c-cmd">npm</span> run build
+
+<span class="c-cmt"># 2. Push to container</span>
+<span class="c-cmd">sh</span> update-container.sh</pre>
+                </div>
+            </div>
+            <div>
+                <h3 style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+                    <span class="pill pill-green">Auto</span> File watcher
+                </h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <div class="code-dots"><span class="dot dot-red"></span><span class="dot dot-amber"></span><span class="dot dot-green"></span></div>
+                        <div class="code-title">Watches for changes, auto-syncs</div>
+                    </div>
+                    <pre><span class="c-cmt"># Starts watcher — Ctrl+C to stop</span>
+<span class="c-cmd">npm</span> run dev-watch
+
+<span class="c-cmt"># ✓ Auto-rebuilds on file change</span>
+<span class="c-cmt"># ✓ Auto-updates plugin in container</span></pre>
+                </div>
+                <div class="alert alert-green" style="margin-top:10px;">
+                    <div class="alert-icon">⚡</div>
+                    <div><span>Container sync takes ~3–5 seconds. PHP changes hot-reload via the watcher; no restart needed.</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════ DOCKER COMMANDS ═══════════════════════ -->
+<section>
+    <div class="wrap">
+        <div class="section-label">Docker</div>
+        <h2>Container cheatsheet.</h2>
+
+        <div class="cmd-grid">
+            <div class="cmd-row">
+                <span class="cmd-label">Start containers</span>
+                <code class="cmd-code">docker-compose up -d</code>
+            </div>
+            <div class="cmd-row">
+                <span class="cmd-label">Stop containers</span>
+                <code class="cmd-code">docker-compose down</code>
+            </div>
+            <div class="cmd-row">
+                <span class="cmd-label">View logs</span>
+                <code class="cmd-code">docker-compose logs -f</code>
+            </div>
+            <div class="cmd-row">
+                <span class="cmd-label">Restart containers</span>
+                <code class="cmd-code">docker-compose restart</code>
+            </div>
+            <div class="cmd-row">
+                <span class="cmd-label">Admin shell</span>
+                <code class="cmd-code">docker exec -u root …</code>
+            </div>
+            <div class="cmd-row">
+                <span class="cmd-label">WP CLI</span>
+                <code class="cmd-code">docker exec … wp …</code>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════ TROUBLESHOOTING ═══════════════════════ -->
+<section>
+    <div class="wrap">
+        <div class="section-label">Troubleshooting</div>
+        <h2>Something not working?</h2>
+
+        <div style="margin-top:28px;">
+            <div class="alert alert-amber">
+                <div class="alert-icon">👁️</div>
+                <div>
+                    <strong>Plugin not showing in WooCommerce?</strong>
+                    <span>Re-run the install step from Quick Start — the copy command needs to run again after the container restarts.</span>
+                </div>
+            </div>
+            <div class="alert alert-amber">
+                <div class="alert-icon">🔄</div>
+                <div>
+                    <strong>Changes not reflecting in the browser?</strong>
+                    <span>Clear your browser cache and flush WooCommerce transients from <em>WooCommerce → System Status → Tools</em>.</span>
+                </div>
+            </div>
+            <div class="alert alert-amber">
+                <div class="alert-icon">🔑</div>
+                <div>
+                    <strong>Permission errors on container copy?</strong>
+                    <span>Use <code>docker exec -u root</code> for administrative commands that need to write outside <code>www-data</code> scope.</span>
+                </div>
+            </div>
+            <div class="alert alert-blue">
+                <div class="alert-icon">ℹ️</div>
+                <div>
+                    <strong>PHP vs JS changes</strong>
+                    <span>PHP changes: the watcher handles re-copy automatically. JavaScript and CSS changes always require a rebuild (<code>npm run build</code>) first.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
+<footer>
+    <div class="wrap">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="logo-mark">StregPay</div>
+                <p>WooCommerce payment gateway for F-Klub's internal stregdollar balance system. Built with ☕ and stregdollars by F-Klub members.</p>
+            </div>
+            <div class="footer-col">
+                <h5>Project</h5>
+                <a href="https://github.com/f-klubben/stregsystemet">Stregsystemet</a>
+                <a href="https://fklub.dk">F-Klub Website</a>
+                <a href="https://github.com/f-klubben/stregsystemet/blob/next/openapi">API Docs</a>
+                <a href="https://github.com/f-klubben/stregsystemet/blob/next/CONTRIBUTING.md">Contributing</a>
+            </div>
+            <div class="footer-col">
+                <h5>Resources</h5>
+                <a href="https://github.com/f-klubben/stregsystemet/blob/next/changelog">Changelog</a>
+                <a href="https://github.com/f-klubben/stregsystemet/issues">Issues</a>
+                <a href="https://github.com/f-klubben/stregsystemet/blob/next/LICENSE">License (LPW)</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>© F-Klub — <a href="https://fklub.dk">fklub.dk</a></span>
+            <span>
+        <span class="inline-dot" style="background:var(--green)"></span>
+        Built on <a href="https://github.com/f-klubben/stregsystemet">stregsystemet</a> &amp; WooCommerce
+      </span>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>
