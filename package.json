@@ -1,0 +1,32 @@
+{
+	"name": "stregpay-checkout",
+	"version": "0.1.0",
+	"author": "The WordPress Contributors",
+	"license": "GPL-2.0-or-later",
+	"main": "build/index.js",
+	"scripts": {
+		"build": "wp-scripts build --blocks-manifest",
+		"format": "wp-scripts format",
+		"lint:css": "wp-scripts lint-style",
+		"lint:js": "wp-scripts lint-js",
+		"packages-update": "wp-scripts packages-update",
+		"plugin-zip": "wp-scripts plugin-zip",
+		"start": "wp-scripts start --blocks-manifest",
+	"dev-watch": "npx nodemon --watch src --watch . --watch block.json --ext js,php,scss,json --exec \"npm run build && bash update-container.sh\"",
+		"postinstall": "npm i --D \"prettier@npm:wp-prettier@latest\" && npm i --D eslint-plugin-prettier@latest"
+	},
+	"devDependencies": {
+		"@woocommerce/dependency-extraction-webpack-plugin": "latest",
+		"@woocommerce/eslint-plugin": "latest",
+		"@woocommerce/blocks-registry": "latest",
+		"@wordpress/prettier-config": "latest",
+		"@wordpress/scripts": "^31.7.0",
+		"eslint-plugin-prettier": "^5.5.5",
+		"prettier": "npm:wp-prettier@^3.0.3"
+	},
+	"files": [
+		"*.php",
+		"build",
+		"block.json"
+	]
+}
