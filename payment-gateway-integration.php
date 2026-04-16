@@ -29,8 +29,8 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
         // Define user set variables
         $this->enabled = $this->get_option('enabled');
         $this->settings = [
-            'api_endpoint' => $this->get_option('stregsystem_api_endpoint'),
-            'room_id' => $this->get_option('stregsystem_room_id'),
+            'stregsystem_api_endpoint' => $this->get_option('stregsystem_api_endpoint'),
+            'stregsystem_room_id' => $this->get_option('stregsystem_room_id'),
         ];
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -115,10 +115,10 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
         $product_string = 'øl:3';
 
         // Get room ID from order meta or use default
-        $room_id = $this->settings['room_id'];
+        $room_id = $this->settings['stregsystem_room_id'];
 
         // Prepare API request according to api.yaml specification
-        $api_url = $this->settings['api_endpoint'] . '/api/sale/intent';
+        $api_url = $this->settings['stregsystem_api_endpoint'] . '/api/sale/intent';
 
         $request_body = [
             'productstring' => $product_string,
@@ -133,7 +133,7 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
 		error_log('STREGPAY: Request body: ' . print_r($request_body, true));
 
         // Check if API endpoint is configured
-        if (empty($this->settings['api_endpoint'])) {
+        if (empty($this->settings['stregsystem_api_endpoint'])) {
             error_log('STREGPAY: API endpoint not configured');
             throw new Exception(__('Stregsystem API endpoint not configured. Please contact site administrator.', 'stregpay-checkout'));
         }
