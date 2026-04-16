@@ -19,17 +19,18 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
             'refunds'
         );
 
+        $this->title = 'StregPay';
+        $this->description = 'Pay with StregPay';
+
         // Load settings
         $this->init_form_fields();
         $this->init_settings();
 
         // Define user set variables
-        $this->title = $this->get_option('title');
-        $this->description = $this->get_option('description');
         $this->enabled = $this->get_option('enabled');
         $this->settings = [
-            'api_endpoint' => $this->get_option('api_endpoint'),
-            'api_key' => $this->get_option('api_key')
+            'api_endpoint' => $this->get_option('stregsystem_api_endpoint'),
+            'room_id' => $this->get_option('stregsystem_room_id'),
         ];
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -52,29 +53,18 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
                 'label' => __('Enable Stregpay', 'stregpay-checkout'),
                 'default' => 'yes'
             ),
-            'title' => array(
-                'title' => __('Title', 'stregpay-checkout'),
+            'stregsystem_room_id' => array(
+                'title' => 'Stregsystem Room ID',
                 'type' => 'text',
-                'description' => __('Payment method title that the customer will see.', 'stregpay-checkout'),
-                'default' => __('Stregpay', 'stregpay-checkout'),
+                'default' => '10',
                 'desc_tip' => true,
             ),
-            'description' => array(
-                'title' => __('Description', 'stregpay-checkout'),
-                'type' => 'textarea',
-                'description' => __('Payment method description that the customer will see.', 'stregpay-checkout'),
-                'default' => __('Pay with your Stregpay club points (streger).', 'stregpay-checkout'),
-            ),
-			'api_endpoint' => array(
-				'title' => 'API Endpoint',
+			'stregsystem_api_endpoint' => array(
+				'title' => 'Stregsystem API Endpoint',
 				'type' => 'text',
 				'default' => 'https://stregsystem.fklub.dk',
 				'desc_tip' => true,
 			),
-            'api_key' => array(
-                'title' => __('Live API Key', 'stregpay-checkout'),
-                'type' => 'password',
-            )
         );
     }
 
@@ -121,21 +111,11 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
      * @return string Payment intent URL (confirmation_url from API response)
      */
     private function create_payment_intent($order) {
-		// For now, return a mock payment URL that simulates the Stregpay payment flow
-		// In production, this should call the actual Stregpay API with a POST request
-		/*
-		{
-		  "productstring": "beer:3",
-		  "room_id": 10,
-		  "webhook_url": "https://webshop.example.com/webhooks/stregsystem",
-		  "max_expires_in_seconds": 300
-		}*/
-
-        // Build product string (simplified for now - you'll implement the logic)
+        // Mock product string
         $product_string = 'øl:3';
 
         // Get room ID from order meta or use default
-        $room_id = $order->get_meta('_stregsystem_room_id', true, 'edit') ?: 1;
+        $room_id = $this->settings['room_id'];
 
         // Prepare API request according to api.yaml specification
         $api_url = $this->settings['api_endpoint'] . '/api/sale/intent';
@@ -145,20 +125,14 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
             'room_id' => $room_id,
             'webhook_url' => home_url('/stregpay/v1/webhook'),
             'return_url' => $order->get_checkout_order_received_url(),
-            'max_expires_in_seconds' => 300     // 5 minutes
+            'max_expires_in_seconds' => 600     // 10 minutes
         ];
 
         // Log request for debugging
 		error_log('STREGPAY: Creating payment intent for order ' . $order->get_id());
 		error_log('STREGPAY: Request body: ' . print_r($request_body, true));
 
-        // Check if API key is configured
-        if (empty($this->settings['api_key'])) {
-            error_log('STREGPAY: API key not configured');
-            throw new Exception(__('Stregsystem API key not configured. Please contact site administrator.', 'stregpay-checkout'));
-        }
-
-        // Check if API key is configured
+        // Check if API endpoint is configured
         if (empty($this->settings['api_endpoint'])) {
             error_log('STREGPAY: API endpoint not configured');
             throw new Exception(__('Stregsystem API endpoint not configured. Please contact site administrator.', 'stregpay-checkout'));
@@ -168,8 +142,6 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
         $response = wp_remote_post($api_url, [
             'headers' => [
                 'Content-Type' => 'application/json',
-                'Authorization' => 'Bearer ' . $this->settings['api_key'],
-                'X-Stregpay-Version' => '2024-03-30'
             ],
             'body' => json_encode($request_body),
             'timeout' => 30,
