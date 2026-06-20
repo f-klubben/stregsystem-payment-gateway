@@ -100,3 +100,25 @@ function stregpay_handle_webhook(WP_REST_Request $request) {
 
     return new WP_Error('invalid_webhook', 'Invalid webhook data', array('status' => 400));
 }
+
+/**
+ * Warn if permalinks are set to "Plain", which breaks the Stregpay webhook endpoint.
+ */
+add_action( 'admin_notices', function () {
+	if ( get_option( 'permalink_structure' ) === '' ) {
+		?>
+		<div class="notice notice-error">
+			<p>
+				<strong>Stregpay Checkout:</strong>
+				<?php
+				printf(
+					/* translators: %s: link to permalinks settings page */
+					esc_html__( 'Your site uses "Plain" permalinks, which prevents the Stregpay webhook endpoint from working. Please change your permalink structure in %s to anything other than "Plain".', 'stregpay-checkout' ),
+					'<a href="' . esc_url( admin_url( 'options-permalinks.php' ) ) . '">' . esc_html__( 'Settings → Permalinks', 'stregpay-checkout' ) . '</a>'
+				);
+				?>
+			</p>
+		</div>
+		<?php
+	}
+} );
