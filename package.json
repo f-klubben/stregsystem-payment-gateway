@@ -12,16 +12,15 @@
 		"packages-update": "wp-scripts packages-update",
 		"plugin-zip": "wp-scripts plugin-zip",
 		"start": "wp-scripts start --blocks-manifest",
-	"dev-watch": "npx nodemon --watch src --watch . --watch block.json --ext js,php,scss,json --exec \"npm run build && bash update-container.sh\"",
+		"dev-watch": "npx nodemon --watch src --watch . --watch block.json --ext js,php,scss,json --exec \"npm run build && bash update-container.sh\"",
 		"postinstall": "npm i --D \"prettier@npm:wp-prettier@latest\" && npm i --D eslint-plugin-prettier@latest"
 	},
 	"devDependencies": {
 		"@woocommerce/dependency-extraction-webpack-plugin": "latest",
 		"@woocommerce/eslint-plugin": "latest",
-		"@woocommerce/blocks-registry": "latest",
 		"@wordpress/prettier-config": "latest",
 		"@wordpress/scripts": "^31.7.0",
-		"eslint-plugin-prettier": "^5.5.5",
+		"eslint-plugin-prettier": "^5.5.6",
 		"prettier": "npm:wp-prettier@^3.0.3"
 	},
 	"files": [
