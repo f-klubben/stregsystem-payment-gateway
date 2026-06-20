@@ -27,7 +27,6 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
         $this->init_settings();
 
         // Define user set variables
-        $this->enabled = $this->get_option('enabled');
         $this->settings = [
             'stregsystem_api_endpoint' => $this->get_option('stregsystem_api_endpoint'),
             'stregsystem_room_id' => $this->get_option('stregsystem_room_id'),
@@ -38,7 +37,7 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
         // Debug: Log that constructor completed successfully
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('STREGPAY: Payment method constructor completed successfully');
-            error_log('STREGPAY: Enabled: ' . ($this->enabled === 'yes' ? 'YES' : 'NO'));
+            error_log('STREGPAY: Enabled: ' . $this->enabled);
         }
     }
 
@@ -47,12 +46,6 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
      */
     public function init_form_fields() {
         $this->form_fields = array(
-            'enabled' => array(
-                'title' => __('Enable/Disable', 'stregpay-checkout'),
-                'type' => 'checkbox',
-                'label' => __('Enable Stregpay', 'stregpay-checkout'),
-                'default' => 'yes'
-            ),
             'stregsystem_room_id' => array(
                 'title' => 'Stregsystem Room ID',
                 'type' => 'text',
