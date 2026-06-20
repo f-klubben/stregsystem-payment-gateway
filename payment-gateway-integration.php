@@ -116,7 +116,7 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
         $request_body = [
             'productstring' => $product_string,
             'room_id' => $room_id,
-            'webhook_url' => home_url('/stregpay/v1/webhook'),
+            'webhook_url' => home_url('/wp-json/stregpay/v1/webhook'),
             'return_url' => $order->get_checkout_order_received_url(),
             'max_expires_in_seconds' => 600     // 10 minutes
         ];
