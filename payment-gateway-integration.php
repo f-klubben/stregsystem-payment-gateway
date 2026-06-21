@@ -36,8 +36,8 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
 
         // Debug: Log that constructor completed successfully
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('STREGPAY: Payment method constructor completed successfully');
-            error_log('STREGPAY: Enabled: ' . $this->enabled);
+            error_log('[STREGPAY-GATEWAY]: Payment method constructor completed successfully');
+            error_log('[STREGPAY-GATEWAY]: Enabled: ' . $this->enabled);
         }
     }
 
@@ -122,12 +122,11 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
         ];
 
         // Log request for debugging
-		error_log('STREGPAY: Creating payment intent for order ' . $order->get_id());
-		error_log('STREGPAY: Request body: ' . print_r($request_body, true));
+		error_log('[STREGPAY-GATEWAY]: Request body: ' . var_dump($request_body));
 
         // Check if API endpoint is configured
         if (empty($this->settings['stregsystem_api_endpoint'])) {
-            error_log('STREGPAY: API endpoint not configured');
+            error_log('[STREGPAY-GATEWAY]: API endpoint not configured');
             throw new Exception(__('Stregsystem API endpoint not configured. Please contact site administrator.', 'stregpay-checkout'));
         }
 
@@ -143,7 +142,7 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
 
         // Handle API response
         if (is_wp_error($response)) {
-            error_log('STREGPAY API Error: ' . $response->get_error_message());
+            error_log('[STREGPAY-GATEWAY] API Error: ' . $response->get_error_message());
 			throw new Exception(__('Unable to connect to Stregsystem. Please try again.', 'stregpay-checkout'));
         }
 
@@ -151,8 +150,7 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
         $response_body = json_decode(wp_remote_retrieve_body($response), true);
 
         // Log response for debugging
-		error_log('STREGPAY: API Response Code: ' . $response_code);
-		error_log('STREGPAY: API Response Body: ' . print_r($response_body, true));
+		error_log('[STREGPAY-GATEWAY]: API Response (' . $response_code . ') Body: ' . print_r($response_body, true));
 
         // Check for successful response (201 Created per api.yaml)
         if ($response_code === 201) {
@@ -169,7 +167,7 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
         } else {
             // Handle specific error cases from api.yaml
             $error_message = $response_body['detail'] ?? $response_body['message'] ?? $response_body['error'] ?? 'Unknown error';
-            error_log('STREGPAY API Error: ' . $error_message);
+            error_log('[STREGPAY-GATEWAY] API Error: ' . $error_message);
 
             if ($response_code === 400) {
                 // Bad request - invalid parameters

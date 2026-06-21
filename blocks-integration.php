@@ -51,9 +51,6 @@ class StregpayCheckout_Blocks_Integration extends AbstractPaymentMethodType {
 	public function is_active() {
 		// Get the enabled setting directly since get_setting is protected
 		$enabled = isset($this->settings['enabled']) ? $this->settings['enabled'] : false;
-		if (defined('WP_DEBUG') && WP_DEBUG) {
-			error_log('STREGPAY BLOCKS: is_active() called, enabled=' . $enabled);
-		}
 		return filter_var( $enabled, FILTER_VALIDATE_BOOLEAN );
 	}
 
