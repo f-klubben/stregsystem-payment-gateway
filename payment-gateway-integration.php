@@ -166,10 +166,10 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
             }
 
             $confirmation_url = $response_body['confirmation_url'];
-            $intent_id = $response_body['id'];
 
             // Store intent ID in order meta for webhook handling
-            $order->update_meta_data('_stregsystem_intent_id', $intent_id);
+            $order->update_meta_data('_stregsystem_intent_id', $response_body['id']);
+            $order->update_meta_data('_stregsystem_intent_secret', $response_body['secret']);
             $order->save();
 
             error_log('[STREGPAY-GATEWAY] Awaiting payment'); // . print_r($order, true));
