@@ -80,6 +80,13 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
      */
     public function process_payment($order_id) {
         $order = wc_get_order($order_id);
+
+		if ($order->status == 'failed') {
+		    // Order already exists
+		    $old_intent_id = $order->get_meta('_stregsystem_intent_id');
+		    $old_intent_secret = $order->get_meta('_stregsystem_intent_secret');
+		    // TODO: delete old intent before creating new.
+		}
         
         // Set order status to pending (awaiting payment)
         $order->update_status('pending', __('Awaiting Stregpay payment', 'stregpay-checkout'));
