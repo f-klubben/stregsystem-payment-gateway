@@ -154,16 +154,20 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
 
         // Check for successful response (201 Created per api.yaml)
         if ($response_code === 201) {
-            if (!empty($response_body['confirmation_url'])) {
-                // Store intent ID in order meta for webhook handling
-                if (!empty($response_body['id'])) {
-                    $order->update_meta_data('_stregsystem_intent_id', $response_body['id']);
-                    $order->save();
-                }
-                return $response_body['confirmation_url'];
-            } else {
-                throw new Exception(__('Invalid response from Stregsystem: missing confirmation_url', 'stregpay-checkout'));
+            if (!isset($response_body['confirmation_url']) || !isset($response_body['id'])) {
+                throw new Exception(__('Invalid response from Stregsystem: missing confirmation_url or id', 'stregpay-checkout'));
             }
+
+            $confirmation_url = $response_body['confirmation_url'];
+            $intent_id = $response_body['id'];
+
+            // Store intent ID in order meta for webhook handling
+            $order->update_meta_data('_stregsystem_intent_id', $intent_id);
+            $order->save();
+
+            error_log('[STREGPAY-GATEWAY] Awaiting payment'); // . print_r($order, true));
+
+            return $confirmation_url;
         } else {
             // Handle specific error cases from api.yaml
             $error_message = $response_body['detail'] ?? $response_body['message'] ?? $response_body['error'] ?? 'Unknown error';
