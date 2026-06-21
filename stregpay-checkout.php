@@ -82,23 +82,50 @@ function stregpay_handle_webhook(WP_REST_Request $request) {
     // TODO: Verify webhook signature
     // $signature = $request->get_header('X-Stregpay-Signature');
 
-    if (isset($body['order_id']) && isset($body['status'])) {
-        $order = wc_get_order($body['order_id']);
-
-        if ($order) {
-            // Update order status based on webhook
-            if ($body['status'] === 'completed') {
-                $order->update_status('processing', __('Payment confirmed via Stregpay', 'stregpay-checkout'));
-                $order->payment_complete();
-            } elseif ($body['status'] === 'failed') {
-                $order->update_status('failed', __('Stregpay payment failed', 'stregpay-checkout'));
-            }
-
-            return rest_ensure_response(array('success' => true));
-        }
+    if (!isset($body['status']) || !isset($body['id'])) {
+        return new WP_Error('invalid_webhook', 'Invalid webhook data', array('status' => 400));
     }
 
-    return new WP_Error('invalid_webhook', 'Invalid webhook data', array('status' => 400));
+    error_log('[STREGPAY CHECKOUT] Webhook request' . print_r($body, true));
+
+    $intent_id = $body['id'];
+    $intent_status = $body['status'];
+
+    if ($intent_status == 'I'){
+        // Intent has just been initialized
+        // We don't have an Intent ID connected to an order yet.
+        return rest_ensure_response(array('success' => true));
+    }
+
+    $orders = wc_get_orders([
+        'limit'      => 1,
+        'meta_key'   => '_stregsystem_intent_id',
+        'meta_value' => $intent_id,
+    ]);
+
+    if (empty($orders)) {
+        error_log('[STREGPAY CHECKOUT] Webhook request - order not found');
+        return new WP_Error('invalid_webhook', 'Order not found', array('status' => 400));
+    }
+
+    $order = $orders[0];
+
+    if ($intent_status == 'P') {
+        // On-hold
+        $order->update_status('on-hold', __('Payment pending funds (via Stregpay)', 'stregpay-checkout'));
+    } elseif ($intent_status == 'F') {
+        // Finalized, funds secured
+        $order->update_status('processing', __('Payment confirmed (via Stregpay)', 'stregpay-checkout'));
+        $order->payment_complete();
+    } elseif ($intent_status == 'A' || $intent_status == 'E' || $intent_status == 'C') {
+        // Aborted, cancelled or expired
+        $order->update_status('failed', __('Stregpay payment failed', 'stregpay-checkout'));
+        $order->payment_complete();
+    } else {
+        return new WP_Error('invalid_webhook', 'Invalid webhook data', array('status' => 400));
+    }
+
+    return rest_ensure_response(array('success' => true));
 }
 
 /**
