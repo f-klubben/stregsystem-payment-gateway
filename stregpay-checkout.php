@@ -116,11 +116,9 @@ function stregpay_handle_webhook(WP_REST_Request $request) {
     } elseif ($intent_status == 'F') {
         // Finalized, funds secured
         $order->update_status('processing', __('Payment confirmed (via Stregpay)', 'stregpay-checkout'));
-        $order->payment_complete();
     } elseif ($intent_status == 'A' || $intent_status == 'E' || $intent_status == 'C') {
         // Aborted, cancelled or expired
         $order->update_status('failed', __('Stregpay payment failed', 'stregpay-checkout'));
-        $order->payment_complete();
     } else {
         return new WP_Error('invalid_webhook', 'Invalid webhook data', array('status' => 400));
     }
