@@ -81,8 +81,8 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
     public function process_payment($order_id) {
         $order = wc_get_order($order_id);
         
-        // Set order status to on-hold (awaiting payment)
-        $order->update_status('on-hold', __('Awaiting Stregpay payment', 'stregpay-checkout'));
+        // Set order status to pending (awaiting payment)
+        $order->update_status('pending', __('Awaiting Stregpay payment', 'stregpay-checkout'));
         
         // Reduce stock levels
         wc_reduce_stock_levels($order_id);
