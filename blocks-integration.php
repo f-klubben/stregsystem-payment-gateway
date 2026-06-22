@@ -39,7 +39,7 @@ class StregpayCheckout_Blocks_Integration extends AbstractPaymentMethodType {
 		$this->settings = get_option( 'woocommerce_stregpay_settings', [] );
 		// Debug: Log settings
 		if (defined('WP_DEBUG') && WP_DEBUG) {
-			error_log('STREGPAY BLOCKS: Settings loaded: ' . print_r($this->settings, true));
+			//error_log('STREGPAY BLOCKS: Settings loaded: ' . print_r($this->settings, true));
 		}
 	}
 

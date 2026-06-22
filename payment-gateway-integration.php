@@ -129,7 +129,7 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
         ];
 
         // Log request for debugging
-		error_log('[STREGPAY-GATEWAY]: Request body: ' . var_dump($request_body));
+		error_log('[STREGPAY-GATEWAY]: Request body: ' . print_r($request_body, true));
 
         // Check if API endpoint is configured
         if (empty($this->settings['stregsystem_api_endpoint'])) {
