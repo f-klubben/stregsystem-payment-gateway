@@ -104,6 +104,36 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
         );
     }
 
+    private function create_product_string($order) {
+        $aggregated = [];
+
+        foreach ($order->get_items() as $item) {
+            $product = $item->get_product();
+
+            if (!$product) {
+                continue;
+            }
+
+            $external_id = $product->get_meta('_stregsystem_product_id');
+
+            if (!$external_id) {
+                continue;
+            }
+
+            $aggregated[$external_id] = ($aggregated[$external_id] ?? 0)
+                + $item->get_quantity();
+        }
+
+        $parts = [];
+
+        foreach ($aggregated as $external_id => $quantity) {
+            $parts[] = "{$external_id}:{$quantity}";
+        }
+
+        $result = implode(' ', $parts);
+        return $result;
+    }
+
     /**
      * Create payment intent - calls Stregpay API /api/sale/intent endpoint
      *
@@ -112,7 +142,7 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
      */
     private function create_payment_intent($order) {
         // Mock product string
-        $product_string = 'øl:3';
+        $product_string = $this->create_product_string($order);
 
         // Get room ID from order meta or use default
         $room_id = $this->settings['stregsystem_room_id'];

@@ -126,6 +126,27 @@ function stregpay_handle_webhook(WP_REST_Request $request) {
     return rest_ensure_response(array('success' => true));
 }
 
+// Add field to General tab
+add_action('woocommerce_product_options_general_product_data', function () {
+    woocommerce_wp_text_input([
+        'id'          => '_stregsystem_product_id',
+        'label'       => __('Stregsystem Product ID', 'stregpay-checkout'),
+        'desc_tip'    => true,
+        'description' => __('ID of the product in the Stregsystem.', 'stregpay-checkout'),
+    ]);
+});
+
+// Save field
+add_action('woocommerce_process_product_meta', function ($product_id) {
+    if (isset($_POST['_stregsystem_product_id'])) {
+        update_post_meta(
+            $product_id,
+            '_stregsystem_product_id',
+            sanitize_text_field($_POST['_stregsystem_product_id'])
+        );
+    }
+});
+
 /**
  * Warn if permalinks are set to "Plain", which breaks the Stregpay webhook endpoint.
  */
