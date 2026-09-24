@@ -42,6 +42,171 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
     }
 
     /**
+     * Render the admin settings options page with a live connection and room existence check.
+     */
+    public function admin_options() {
+        echo '<h2>' . esc_html($this->get_method_title());
+        wc_back_link(__('Return to payments', 'woocommerce'), admin_url('admin.php?page=wc-settings&tab=checkout'));
+        echo '</h2>';
+
+        if ($this->get_method_description()) {
+            echo wp_kses_post(wpautop(wptexturize($this->get_method_description())));
+        }
+
+        $this->display_connection_status();
+
+        echo '<table class="form-table">' . $this->generate_settings_html($this->get_form_fields(), false) . '</table>';
+    }
+
+    /**
+     * Display connection and room existence status banner in settings screen.
+     */
+    public function display_connection_status() {
+        $status = $this->check_connection();
+        $icon = '';
+
+        if ($status['type'] === 'success') {
+            $icon = '<span class="dashicons dashicons-yes-alt" style="color: #008a20; font-size: 24px; width: 24px; height: 24px; vertical-align: middle; margin-right: 10px;"></span>';
+        } elseif ($status['type'] === 'warning') {
+            $icon = '<span class="dashicons dashicons-warning" style="color: #dba617; font-size: 24px; width: 24px; height: 24px; vertical-align: middle; margin-right: 10px;"></span>';
+        } else {
+            $icon = '<span class="dashicons dashicons-dismiss" style="color: #d63638; font-size: 24px; width: 24px; height: 24px; vertical-align: middle; margin-right: 10px;"></span>';
+        }
+
+        $recheck_url = admin_url('admin.php?page=wc-settings&tab=checkout&section=' . $this->id);
+
+        printf(
+            '<div class="notice notice-%s inline" style="margin: 15px 0 20px 0; padding: 12px 16px; display: flex; align-items: center;">
+                %s
+                <div style="flex-grow: 1;">
+                    <strong>%s:</strong> %s
+                </div>
+                <div>
+                    <a href="%s" class="button button-secondary" style="margin-left: 12px;">%s</a>
+                </div>
+            </div>',
+            esc_attr($status['type']),
+            $icon,
+            esc_html($status['title']),
+            esc_html($status['message']),
+            esc_url($recheck_url),
+            esc_html__('Re-check Connection', 'stregpay-checkout')
+        );
+    }
+
+    /**
+     * Check if Stregsystem API is reachable and if the configured room exists.
+     *
+     * @param string|null $endpoint
+     * @param string|null $room_id
+     * @return array
+     */
+    public function check_connection($endpoint = null, $room_id = null) {
+        $endpoint = rtrim($endpoint ?: ($this->get_option('stregsystem_api_endpoint') ?: 'https://stregsystem.fklub.dk'), '/');
+        $room_id  = trim((string) ($room_id ?: ($this->get_option('stregsystem_room_id') ?: '10')));
+
+        if (empty($endpoint)) {
+            return [
+                'connected'  => false,
+                'room_found' => false,
+                'type'       => 'error',
+                'title'      => __('Configuration Error', 'stregpay-checkout'),
+                'message'    => __('Stregsystem API endpoint is not configured.', 'stregpay-checkout'),
+            ];
+        }
+
+        if (empty($room_id)) {
+            return [
+                'connected'  => false,
+                'room_found' => false,
+                'type'       => 'error',
+                'title'      => __('Configuration Error', 'stregpay-checkout'),
+                'message'    => __('Stregsystem Room ID is not configured.', 'stregpay-checkout'),
+            ];
+        }
+
+        $api_url  = add_query_arg('room_id', $room_id, $endpoint . '/api/products/active_products');
+        $response = wp_remote_get($api_url, [
+            'timeout' => 5,
+            'headers' => [
+                'Accept' => 'application/json',
+            ],
+        ]);
+
+        if (is_wp_error($response)) {
+            return [
+                'connected'  => false,
+                'room_found' => false,
+                'type'       => 'error',
+                'title'      => __('Connection Failed', 'stregpay-checkout'),
+                'message'    => sprintf(
+                    __('Could not connect to Stregsystem at %s: %s', 'stregpay-checkout'),
+                    $endpoint,
+                    $response->get_error_message()
+                ),
+            ];
+        }
+
+        $code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+
+        if ($code === 200) {
+            $products = json_decode($body, true);
+            $count    = is_array($products) ? count($products) : 0;
+            return [
+                'connected'  => true,
+                'room_found' => true,
+                'type'       => 'success',
+                'title'      => __('Connected & Room Verified', 'stregpay-checkout'),
+                'message'    => sprintf(
+                    __('Successfully connected to Stregsystem at %s. Room %s exists (%d active products found).', 'stregpay-checkout'),
+                    $endpoint,
+                    $room_id,
+                    $count
+                ),
+            ];
+        }
+
+        if ($code === 400) {
+            $clean_body = trim(wp_strip_all_tags($body));
+            return [
+                'connected'  => true,
+                'room_found' => false,
+                'type'       => 'warning',
+                'title'      => __('API Connected, Room Invalid', 'stregpay-checkout'),
+                'message'    => sprintf(
+                    __('Connected to Stregsystem at %s, but Room %s could not be found (%s).', 'stregpay-checkout'),
+                    $endpoint,
+                    $room_id,
+                    $clean_body ?: 'Room not found'
+                ),
+            ];
+        }
+
+        return [
+            'connected'  => false,
+            'room_found' => false,
+            'type'       => 'error',
+            'title'      => __('API Error', 'stregpay-checkout'),
+            'message'    => sprintf(
+                __('Stregsystem at %s returned HTTP error %d: %s', 'stregpay-checkout'),
+                $endpoint,
+                $code,
+                trim(wp_strip_all_tags($body))
+            ),
+        ];
+    }
+
+    /**
+     * Save admin options and invalidate products transient cache.
+     */
+    public function process_admin_options() {
+        $saved = parent::process_admin_options();
+        delete_transient('stregpay_active_products');
+        return $saved;
+    }
+
+    /**
      * Initialize form fields
      */
     public function init_form_fields() {
