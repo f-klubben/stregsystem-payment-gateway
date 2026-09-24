@@ -1,1 +1,1 @@
-docker exec stregsystem-payment-gateway-wordpress-1 tail -f wp-content/debug.log
+podman exec stregsystem-payment-gateway_wordpress_1 tail -f /var/www/html/wp-content/debug.log
