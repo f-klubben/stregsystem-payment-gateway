@@ -48,6 +48,8 @@ services:
     volumes:
       - wp_content:/var/www/html/wp-content
       - ./stregsystem-payment-gateway:/var/www/html/wp-content/plugins/stregsystem-payment-gateway:ro
+      - ./foocommerce:/opt/foocommerce:ro
+      - ./mu-plugins:/var/www/html/wp-content/mu-plugins:ro
     depends_on:
       db:
         condition: service_healthy
