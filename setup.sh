@@ -17,6 +17,8 @@ if ! wp core is-installed 2>/dev/null; then
         --skip-email
 fi
 
+wp user update "${WP_ADMIN_USER:-admin}" --user_pass="$WP_ADMIN_PASSWORD" --skip-email
+
 wp plugin install woocommerce printful-shipping-for-woocommerce --activate
 wp plugin activate stregsystem-payment-gateway
 wp option update woocommerce_currency FFF
