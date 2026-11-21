@@ -117,6 +117,57 @@ Navigate to **http://localhost:8080** and activate StregPay from *WooCommerce �
 
 ---
 
+## Production Deployment
+
+The live shop is this repo, [`foocommerce`](https://github.com/f-klubben/foocommerce) and
+`docker-compose.prod.yml` in one directory:
+
+```
+/data/shop/
+├── docker-compose.yml            # copy of docker-compose.prod.yml
+├── .env                          # DB_* + WP_ADMIN_PASSWORD (not in git)
+├── stregsystem-payment-gateway/  # this repo
+├── foocommerce/                  # Stregdollar currency + storefront CSS
+└── mu-plugins/                   # copy of this repo's mu-plugins/
+```
+
+```bash
+cd /data/shop
+git clone https://github.com/f-klubben/stregsystem-payment-gateway
+git clone https://github.com/f-klubben/foocommerce
+cp stregsystem-payment-gateway/docker-compose.prod.yml docker-compose.yml
+cp -r stregsystem-payment-gateway/mu-plugins .
+docker volume create wp_db_data wp_wp_content wp_html
+# write .env, then
+docker compose up -d
+bash stregsystem-payment-gateway/setup.sh
+```
+
+`.env` needs the four `DB_*` values plus `WP_ADMIN_PASSWORD` (and optionally `WP_URL`,
+`WP_ADMIN_USER`, `WP_ADMIN_EMAIL`). The volumes are `external`, so compose never removes them — not
+even `docker compose down -v` — and they must exist before the first `up`.
+
+`setup.sh` runs WordPress's own CLI in a throwaway `cli` container: it does the core install, installs
+and activates WooCommerce and Printful, activates StregPay and sets the currency to Stregdollars (FFF).
+Re-running it is harmless. What it cannot do is enter the Stregsystemet API URL + token for StregPay
+or the Printful key — those still go in through the WordPress admin.
+
+WordPress is published on `127.0.0.1:8080`; Caddy terminates TLS and proxies to it.
+
+Updating is a pull and a restart:
+
+```bash
+git -C stregsystem-payment-gateway pull
+git -C foocommerce pull
+docker compose up -d
+```
+
+`mu-plugins/fklub-foocommerce.php` loads the FFF currency filters and injects
+`custom-wp-dokuwiki-theme.css` from the read-only `./foocommerce` mount, so neither needs any admin
+setup. All plugin mounts are `:ro` — update through git, not the WordPress updater.
+
+---
+
 ## Development Workflow
 
 ### Automated — file watcher *(recommended)*
@@ -179,8 +230,11 @@ stregsystem-payment-gateway/
 ├── assets/               # Compiled JS + CSS (do not edit directly)
 ├── includes/             # PHP gateway class and helpers
 ├── templates/            # WooCommerce checkout templates
+├── mu-plugins/           # WordPress must-use plugin (production)
 ├── stregpay-checkout.php # Plugin entry point
 ├── docker-compose.yml    # Dev environment
+├── docker-compose.prod.yml # Production environment
+├── setup.sh              # First-time WordPress install (prod)
 ├── update-container.sh   # Container sync helper
 └── package.json          # Build toolchain
 ```
@@ -190,6 +244,7 @@ stregsystem-payment-gateway/
 ## Related Projects
 
 - [**stregsystemet**](https://github.com/f-klubben/stregsystemet) — The F-Klub stregdollar system (Django) that StregPay integrates with
+- [**foocommerce**](https://github.com/f-klubben/foocommerce) — Stregdollar currency and storefront CSS for the shop
 - [**fklub.dk**](https://fklub.dk) — The F-Klub club website running WooCommerce + StregPay
 
 ---
