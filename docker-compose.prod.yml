@@ -50,7 +50,7 @@ services:
       - wp_content:/var/www/html/wp-content
       - ./stregsystem-payment-gateway:/var/www/html/wp-content/plugins/stregsystem-payment-gateway:ro
       - ./foocommerce:/opt/foocommerce:ro
-      - ./mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+      - ./stregsystem-payment-gateway/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
     depends_on:
       db:
         condition: service_healthy
@@ -63,8 +63,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # wp-cli, for setup.sh and the occasional maintenance command:
-  #   docker compose run --rm cli wp plugin list
   cli:
     image: wordpress:cli-php8.3
     profiles: ["cli"]
@@ -80,7 +78,7 @@ services:
       - wp_content:/var/www/html/wp-content
       - ./stregsystem-payment-gateway:/var/www/html/wp-content/plugins/stregsystem-payment-gateway:ro
       - ./foocommerce:/opt/foocommerce:ro
-      - ./mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+      - ./stregsystem-payment-gateway/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
     depends_on:
       db:
         condition: service_healthy

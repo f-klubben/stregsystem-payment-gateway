@@ -126,9 +126,8 @@ The live shop is this repo, [`foocommerce`](https://github.com/f-klubben/foocomm
 /data/shop/
 ├── docker-compose.yml            # copy of docker-compose.prod.yml
 ├── .env                          # DB_* + WP_ADMIN_PASSWORD (not in git)
-├── stregsystem-payment-gateway/  # this repo
-├── foocommerce/                  # Stregdollar currency + storefront CSS
-└── mu-plugins/                   # copy of this repo's mu-plugins/
+├── stregsystem-payment-gateway/  # this repo (mu-plugin included)
+└── foocommerce/                  # Stregdollar currency + storefront CSS
 ```
 
 ```bash
@@ -136,7 +135,6 @@ cd /data/shop
 git clone https://github.com/f-klubben/stregsystem-payment-gateway
 git clone https://github.com/f-klubben/foocommerce
 cp stregsystem-payment-gateway/docker-compose.prod.yml docker-compose.yml
-cp -r stregsystem-payment-gateway/mu-plugins .
 docker volume create wp_db_data wp_wp_content wp_html
 # write .env, then
 docker compose up -d
