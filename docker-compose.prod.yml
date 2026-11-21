@@ -70,6 +70,7 @@ services:
     profiles: ["cli"]
     user: "33:33"
     environment:
+      HOME: /tmp
       WORDPRESS_DB_HOST: db:3306
       WORDPRESS_DB_USER: ${DB_USER:-wordpress}
       WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
