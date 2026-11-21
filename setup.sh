@@ -1,7 +1,5 @@
 #!/bin/bash
-# First-time WordPress setup: core install plus the plugins the shop needs.
-# Run from the directory with docker-compose.yml and .env:
-#   bash stregsystem-payment-gateway/setup.sh
+# First-time WordPress setup. Run from the directory with docker-compose.yml and .env.
 set -euo pipefail
 
 set -a

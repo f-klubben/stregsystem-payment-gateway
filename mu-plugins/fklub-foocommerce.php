@@ -6,11 +6,9 @@
 
 defined('ABSPATH') || exit;
 
-// foocommerce is bind-mounted here, see docker-compose.prod.yml.
 const FKLUB_FOOCOMMERCE_PATH = '/opt/foocommerce';
 
-// The currency filters live in a Storefront child theme in that repo; load them
-// straight from the file (the packaged plugin wins if it ever gets committed).
+// The filters are in a Storefront child theme; the packaged plugin wins if it is ever committed.
 foreach (array(
     FKLUB_FOOCOMMERCE_PATH . '/WooCommerce-Stregdollar-Currency/woocommerce-stregdollar-currency.php',
     FKLUB_FOOCOMMERCE_PATH . '/StregdollarCurrencyTheme/functions.php',
