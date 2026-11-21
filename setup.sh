@@ -2,10 +2,7 @@
 # First-time WordPress setup. Run from the directory with docker-compose.yml and .env.
 set -euo pipefail
 
-set -a
 . ./.env
-set +a
-
 : "${WP_ADMIN_PASSWORD:?set WP_ADMIN_PASSWORD in .env}"
 
 wp() { docker compose run --rm cli wp "$@"; }
