@@ -159,6 +159,7 @@ Updating is a pull and a restart:
 ```bash
 git -C stregsystem-payment-gateway pull
 git -C foocommerce pull
+cp stregsystem-payment-gateway/docker-compose.prod.yml docker-compose.yml
 docker compose up -d
 ```
 
