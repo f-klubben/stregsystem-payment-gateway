@@ -279,7 +279,7 @@ class WC_Stregpay_Payment_Method extends WC_Payment_Gateway {
                 continue;
             }
 
-            $external_id = $product->get_meta('_stregsystem_product_id');
+            $external_id = stregpay_get_stregsystem_id($product->get_id());
 
             if (!$external_id) {
                 continue;

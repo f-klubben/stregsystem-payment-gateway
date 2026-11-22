@@ -199,17 +199,37 @@ function stregpay_get_active_products($force_refresh = false) {
 }
 
 /**
+ * Resolve the Stregsystem product ID for a post, falling back from a variation to its parent.
+ *
+ * @param int $product_id
+ * @return string
+ */
+function stregpay_get_stregsystem_id($product_id) {
+    $streg_id = trim((string) get_post_meta($product_id, '_stregsystem_product_id', true));
+
+    if ($streg_id === '') {
+        $parent_id = wp_get_post_parent_id($product_id);
+        if ($parent_id) {
+            $streg_id = trim((string) get_post_meta($parent_id, '_stregsystem_product_id', true));
+        }
+    }
+
+    return $streg_id;
+}
+
+/**
  * Check Stregsystem validation status (ID existence, name, and price) for a WooCommerce product.
  *
  * Note: Stregsystem prices are given in cents / streg-ører (e.g. 150 = 1.50).
  *
  * @param int $product_id
  * @param string|null $streg_id Optional override ID (e.g. during save).
+ * @param bool $check_name Compare WooCommerce and Stregsystem names (variations of a parent differ by definition).
  * @return array Status payload.
  */
-function stregpay_check_product_status($product_id, $streg_id = null) {
+function stregpay_check_product_status($product_id, $streg_id = null, $check_name = true) {
     if ($streg_id === null) {
-        $streg_id = get_post_meta($product_id, '_stregsystem_product_id', true);
+        $streg_id = stregpay_get_stregsystem_id($product_id);
     }
 
     $streg_id = trim((string) $streg_id);
@@ -241,7 +261,7 @@ function stregpay_check_product_status($product_id, $streg_id = null) {
     $streg_name     = stregpay_normalize_product_name($streg_name_raw);
     $wc_name        = get_the_title($product_id);
     $wc_name_norm   = stregpay_normalize_product_name($wc_name);
-    $name_matches   = (strcasecmp($wc_name_norm, $streg_name) === 0);
+    $name_matches   = !$check_name || (strcasecmp($wc_name_norm, $streg_name) === 0);
 
     // Stregsystem price is given in cents (e.g. 150 = 1.50)
     $streg_price_cents = isset($streg_item['price']) ? (int) $streg_item['price'] : null;
@@ -257,7 +277,7 @@ function stregpay_check_product_status($product_id, $streg_id = null) {
     $is_match      = ($name_matches && $price_matches);
 
     $mismatches = [];
-    if (!$name_matches) {
+    if ($check_name && !$name_matches) {
         $mismatches[] = 'name';
     }
     if (!$price_matches) {
@@ -338,7 +358,7 @@ add_action('woocommerce_product_options_general_product_data', function () {
         }
     }
 
-    $description = __('ID of the product in the Stregsystem.', 'stregpay-checkout');
+    $description = __('ID of the product in the Stregsystem. Variations use it unless they have their own ID.', 'stregpay-checkout');
     if (!empty($status_html)) {
         $description .= '<br>' . $status_html;
     }
@@ -351,18 +371,16 @@ add_action('woocommerce_product_options_general_product_data', function () {
     ]);
 });
 
-// Save field & run on-save validation
-add_action('woocommerce_process_product_meta', function ($product_id) {
-    if (!isset($_POST['_stregsystem_product_id'])) {
-        return;
-    }
-
-    $streg_id = sanitize_text_field(wp_unslash($_POST['_stregsystem_product_id']));
-    update_post_meta($product_id, '_stregsystem_product_id', $streg_id);
-
-    if ($streg_id === '') {
-        return;
-    }
+/**
+ * Verify a saved Stregsystem ID and queue the result as an admin notice.
+ *
+ * @param int $product_id Product or variation the ID was saved on.
+ * @param string $streg_id The saved Stregsystem product ID.
+ * @param int|null $notice_post_id Product whose edit screen shows the notice (defaults to $product_id).
+ * @param bool $check_name Compare names too (off for variations, which always differ).
+ */
+function stregpay_verify_saved_id($product_id, $streg_id, $notice_post_id = null, $check_name = true) {
+    $notice_post_id = $notice_post_id ?? $product_id;
 
     // If active products cache doesn't contain this ID, do a fresh fetch in case it was just added in Stregsystem
     $cached = get_transient('stregpay_active_products');
@@ -370,12 +388,12 @@ add_action('woocommerce_process_product_meta', function ($product_id) {
         stregpay_get_active_products(true);
     }
 
-    $check = stregpay_check_product_status($product_id, $streg_id);
+    $check = stregpay_check_product_status($product_id, $streg_id, $check_name);
 
     if ($check['status'] === 'not_found') {
         $settings = get_option('woocommerce_stregpay_settings', []);
         $room_id  = $settings['stregsystem_room_id'] ?? '10';
-        set_transient("stregpay_notice_{$product_id}", [
+        set_transient("stregpay_notice_{$notice_post_id}", [
             'type'    => 'error',
             'message' => sprintf(
                 __('Warning: Stregsystem ID "%s" was not found among active products in room %s.', 'stregpay-checkout'),
@@ -409,12 +427,12 @@ add_action('woocommerce_process_product_meta', function ($product_id) {
                 $check['streg_price_formatted']
             );
         }
-        set_transient("stregpay_notice_{$product_id}", [
+        set_transient("stregpay_notice_{$notice_post_id}", [
             'type'    => 'warning',
             'message' => $msg,
         ], 45);
     } elseif ($check['status'] === 'offline') {
-        set_transient("stregpay_notice_{$product_id}", [
+        set_transient("stregpay_notice_{$notice_post_id}", [
             'type'    => 'warning',
             'message' => sprintf(
                 __('Stregsystem Product ID %s was saved, but the Stregsystem API could not be reached to verify it.', 'stregpay-checkout'),
@@ -422,7 +440,7 @@ add_action('woocommerce_process_product_meta', function ($product_id) {
             ),
         ], 45);
     } elseif ($check['status'] === 'match') {
-        set_transient("stregpay_notice_{$product_id}", [
+        set_transient("stregpay_notice_{$notice_post_id}", [
             'type'    => 'success',
             'message' => sprintf(
                 __('Stregsystem ID %s verified successfully (matches "%s", %s).', 'stregpay-checkout'),
@@ -432,7 +450,52 @@ add_action('woocommerce_process_product_meta', function ($product_id) {
             ),
         ], 45);
     }
+}
+
+// Save field & run on-save validation
+add_action('woocommerce_process_product_meta', function ($product_id) {
+    if (!isset($_POST['_stregsystem_product_id']) || !is_string($_POST['_stregsystem_product_id'])) {
+        return;
+    }
+
+    $streg_id = sanitize_text_field(wp_unslash($_POST['_stregsystem_product_id']));
+    update_post_meta($product_id, '_stregsystem_product_id', $streg_id);
+
+    if ($streg_id === '') {
+        return;
+    }
+
+    stregpay_verify_saved_id($product_id, $streg_id);
 });
+
+// Add the Stregsystem ID field to every variation
+add_action('woocommerce_variation_options_pricing', function ($loop, $variation_data, $variation) {
+    woocommerce_wp_text_input([
+        'id'            => "_stregsystem_variation_product_id{$loop}",
+        'name'          => "_stregsystem_variation_product_id[{$loop}]",
+        'label'         => __('Stregsystem Product ID', 'stregpay-checkout'),
+        'value'         => get_post_meta($variation->ID, '_stregsystem_product_id', true),
+        'wrapper_class' => 'form-row form-row-first',
+        'desc_tip'      => true,
+        'description'   => __('Stregsystem product for this variation. Leave empty to inherit the product ID.', 'stregpay-checkout'),
+    ]);
+}, 10, 3);
+
+// Save the per-variation ID & run on-save validation
+add_action('woocommerce_save_product_variation', function ($variation_id, $loop) {
+    if (!isset($_POST['_stregsystem_variation_product_id'][$loop])) {
+        return;
+    }
+
+    $streg_id = sanitize_text_field(wp_unslash($_POST['_stregsystem_variation_product_id'][$loop]));
+    update_post_meta($variation_id, '_stregsystem_product_id', $streg_id);
+
+    if ($streg_id === '') {
+        return;
+    }
+
+    stregpay_verify_saved_id($variation_id, $streg_id, wp_get_post_parent_id($variation_id), false);
+}, 10, 2);
 
 // Display transient notice on product edit screen
 add_action('admin_notices', function () {
@@ -488,6 +551,65 @@ add_filter('manage_edit-product_columns', function ($columns) {
 // Render Stregsystem column content in products table
 add_action('manage_product_posts_custom_column', function ($column, $post_id) {
     if ($column !== 'stregsystem_status') {
+        return;
+    }
+
+    $product = wc_get_product($post_id);
+
+    // Variable products can map each variation separately instead of using a product-level ID.
+    if ($product && $product->is_type('variable') && stregpay_get_stregsystem_id($post_id) === '') {
+        $variation_ids = $product->get_children();
+        $linked_ids    = [];
+
+        foreach ($variation_ids as $variation_id) {
+            $variation_streg_id = trim((string) get_post_meta($variation_id, '_stregsystem_product_id', true));
+            if ($variation_streg_id !== '') {
+                $linked_ids[$variation_id] = $variation_streg_id;
+            }
+        }
+
+        if (!$linked_ids) {
+            printf(
+                '<span class="na" style="color: #a7aaad;" title="%s">&mdash;</span>',
+                esc_attr__('No Stregsystem ID on the product or its variations', 'stregpay-checkout')
+            );
+            return;
+        }
+
+        $summary         = sprintf(__('%d/%d variations linked', 'stregpay-checkout'), count($linked_ids), count($variation_ids));
+        $active_products = stregpay_get_active_products();
+
+        if ($active_products === null) {
+            printf(
+                '<span title="%s" style="color: #8c8f94;"><span class="dashicons dashicons-warning" style="font-size: 16px; vertical-align: text-top; line-height: 1.2;"></span> %s</span>',
+                esc_attr__('Stregsystem API is unreachable', 'stregpay-checkout'),
+                esc_html($summary)
+            );
+            return;
+        }
+
+        $missing = [];
+        foreach ($linked_ids as $variation_streg_id) {
+            if (!isset($active_products[$variation_streg_id])) {
+                $missing[] = '#' . $variation_streg_id;
+            }
+        }
+
+        if ($missing) {
+            printf(
+                '<span title="%s" style="color: #d63638; font-weight: 500;"><span class="dashicons dashicons-dismiss" style="font-size: 16px; vertical-align: text-top; line-height: 1.2;"></span> %s <small>(%s)</small></span>',
+                esc_attr(sprintf(__('IDs not found in active Stregsystem products: %s', 'stregpay-checkout'), implode(', ', $missing))),
+                esc_html($summary),
+                esc_html__('Not found', 'stregpay-checkout')
+            );
+            return;
+        }
+
+        printf(
+            '<span title="%s" style="color: #008a20; font-weight: 500;"><span class="dashicons dashicons-yes-alt" style="font-size: 16px; vertical-align: text-top; line-height: 1.2;"></span> %s</span>',
+            esc_attr(sprintf(__('All variation IDs found: %s', 'stregpay-checkout'), '#' . implode(', #', $linked_ids))),
+            esc_html($summary)
+        );
         return;
     }
 
